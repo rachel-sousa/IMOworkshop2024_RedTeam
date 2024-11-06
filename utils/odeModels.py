@@ -14,7 +14,6 @@ from odeModelClass import ODEModel
 # ======================== House Keeping Funs ==========================================
 def create_model(modelName,**kwargs):
     funList = {"GDRSModel":GDRSModel,
-               "SensitiveResistantModel":SensitiveResistantModel,
                "CellCycleModel":CellCycleModel}
     return funList[modelName](**kwargs)
 
@@ -47,34 +46,6 @@ class GDRSModel(ODEModel):
     
     def RunCellCountToTumourSizeModel(self, popModelSolDf):
         return popModelSolDf['V'].values
-    
-# -----------------------------------------
-class SensitiveResistantModel(ODEModel):
-    '''
-    Sensitive Resistant Lotka-Volterra Model
-    '''
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.name = "SensitiveResistantModel"
-        self.paramDic = {**self.paramDic,
-            'r_S': 0.03,
-            'r_R': 0.03,
-            'K': 100,
-            'd_D': 1.5e-2,
-            'd_S': 0.,
-            'd_R': 0.,
-            'S0': 10,
-            'R0':0}
-        self.stateVars = ['S', 'R']
-
-    # The governing equations
-    def ModelEqns(self, t, uVec):
-        S, R, D = uVec
-        dudtVec = np.zeros_like(uVec)
-        dudtVec[0] = self.paramDic['r_S'] * (1 - (S+R)/self.paramDic['K']) * S - self.paramDic['d_D']*D*S
-        dudtVec[1] = self.paramDic['r_R'] * (1 - (S+R)/self.paramDic['K']) * R - self.paramDic['d_R']*R
-        dudtVec[2] = 0
-        return (dudtVec)
     
 # -----------------------------------------
 class CellCycleModel(ODEModel):
@@ -121,13 +92,11 @@ class CellCycleModel(ODEModel):
         k_vals = [self.paramDic[f'K_{i}'] for i in range(1, 9)]
         
         # Differential equations
-        print(2 * k_vals[4] * (1 - (G1 + S + SD + G2 + G2D + Dead) / L) * G2)
-        print(G2)
-        dudtVec[0] = 2 * k_vals[4] * np.max((1 - (G1 + S + SD + G2 + G2D + Dead) / L), 0) * G2 - k_vals[0] * G1 #dG1_dt
+        dudtVec[0] = 2 * k_vals[4] * (1 - (G1 + S + SD + G2 + G2D + Dead) / L) * G2 - k_vals[0] * G1 #dG1_dt
         dudtVec[1] = k_vals[0] * (1 - p * (1 + self.E_PARP1(D1))) * G1 - k_vals[1] * S + k_vals[2] * (1 - self.E_ATR1(D2)) * SD #dS_dt
-        dudtVec[2] = k_vals[0] * p * (1 + self.E_PARP1(D1)) * G1 + k_vals[3] * (1 - self.E_ATR1(D2)) * SD - k_vals[5] * SD - k_vals[3] * SD #dSD_dt
+        dudtVec[2] = k_vals[0] * p * (1 + self.E_PARP1(D1)) * G1 - k_vals[2] * (1 - self.E_ATR1(D2)) * SD - k_vals[5] * SD - k_vals[3] * SD #dSD_dt
         dudtVec[3] = k_vals[1] * (1 - q) * S - k_vals[4] * (1 - (G1 + S + SD + G2 + G2D + Dead) / L) * G2 + k_vals[6] * (1 - self.E_PARP2(D1)) * G2D #dG2_dt
-        dudtVec[4] = k_vals[1] * q * S + k_vals[5] * SD - k_vals[7] * (1 - self.E_PARP2(D1)) * G2D - A1 * G2D #dG2D_dt
+        dudtVec[4] = k_vals[1] * q * S + k_vals[5] * SD - k_vals[6] * (1 - self.E_PARP2(D1)) * G2D - k_vals[7] * G2D - A1 * G2D #dG2D_dt
         dudtVec[5] = k_vals[3] * SD + k_vals[7] * G2D + A1 * G2D #dDead_dt
         dudtVec[6] = (1 / tau) * (self.E_ATR2(D2) - A1) #dA1_dt
         dudtVec[7] = 0 #dD1_dt

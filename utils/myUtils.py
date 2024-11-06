@@ -162,6 +162,7 @@ def GetDateFromDataFrame(df):
 # Plot bar that represents drug
 def plot_drug_bar(drug_data_df, ax, timeColumn="Time", drug_columns=["Drug1_Concentration", "Drug2_Concentration"], 
                   treatment_notation_mode="post", plotDrugAsBar=True, drug_bar_position=0.8, y2lim=None, 
+                  max_dose=None,
                   alphas=[0.5, 0.5], drugBarColours=["black", "blue"], borderColours=["darkgrey", "navy"],
                   decorateY2=False, zorder=1, **kwargs):
 
@@ -178,8 +179,8 @@ def plot_drug_bar(drug_data_df, ax, timeColumn="Time", drug_columns=["Drug1_Conc
                                                        mode=treatment_notation_mode),
             tVec=drug_data_df[timeColumn])
         drugConcentrationVec[drugConcentrationVec < 0] = 0
-        
-        drugConcentrationVec = drugConcentrationVec / (drugConcentrationVec.max() + 1e-12) * drug_bar_height / n_drugs
+        curr_max_dose = drugConcentrationVec.max() if max_dose is None else max_dose[i]
+        drugConcentrationVec = drugConcentrationVec / (curr_max_dose + 1e-12) * drug_bar_height / n_drugs
         drugConcentrationVec += curr_drug_bar_position
         
         # Plot each drug concentration as a filled bar with a frame
