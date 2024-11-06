@@ -1,0 +1,9 @@
+# Ignore system files
+.DS_Store
+*pycache*
+.idea
+*.key
+*.code-workspace
+.vscode
+
+models/GDRS*
