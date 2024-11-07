@@ -31,7 +31,7 @@ class ODEModel():
         self.absErr = kwargs.get('absErr', 1.0e-8)  # Absolute error allowed for ODE solver
         self.relErr = kwargs.get('relErr', 1.0e-6)  # Relative error allowed for ODE solver
         self.solverMethod = kwargs.get('method', 'DOP853')  # ODE solver used
-        # self.solverMethod = kwargs.get('method', 'RK23')  ### Rachel changed this # ODE solver used
+        # self.solverMethod = kwargs.get('method', 'Radau')  ### Rachel changed this # ODE solver used
         # self.solverMethod = kwargs.get('method', 'LSODA')  ### Rachel changed this # ODE solver used
         self.max_step = kwargs.get('max_step', np.inf) # Maximum step size permitted by solver
         self.numericalStabilisationB = kwargs.get('numericalStabilisationB', False)  # Whether to apply numerical stabilisation

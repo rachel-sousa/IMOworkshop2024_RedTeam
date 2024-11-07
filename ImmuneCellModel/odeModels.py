@@ -109,40 +109,51 @@ class CellCycleModel(ODEModel):
 
 #--------------------
 class ImmuneModel(ODEModel):
-    '''
-    PERKi
-    '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "ImmuneModel"
         self.paramDic = {**self.paramDic,
-            'r_c': 1,
-            'K': 100000,
-            'd_c':0.1,
-            'd_k':0.01,
-            'alpha': 0.1,
-            'd_M': 0.3,
-            'r_T': 0.0002,
-            'd_T': 0.5,
-            'x': 0.5,
+            #across eq
+            'ic50': 0.023, #micromol/L
+            'd_1': 1.1e-7, #1/cell/day
+            'delta_2': 0.5, #TODO
+            'd_2': 1.1e-7, #1/cell/day
+            'beta_3': 1,
+            #dC/dt
+            'r_C': 0.145, #1/day
+            'beta_1': 0.9,
+            'K': 1e10, #cell
+            'delta_1': 0.5, #TODO
+            'beta_2': 0.85,
+            #dM_A/dt
+            'alpha_A': 0.7e7, #cell/day
+            'q_A': 1e10, #cell
+            'd_A': 0.25, #1/day
+            #dM_P/dt
+            'alpha_P': 0.7e7, #cell/day
+            'q_P': 1e10, #cell
+            'beta_4': 0.8,
+            'd_P': 0.25, #1/day
+            #dT/dt
+            'r_T': 0.1, #TODO maybe wrong cell/day
+            'd_T': 2e-2, #1/day
+            #initial
             'C0': 100,
-            'M0':10,
-            'T0':10}
-        self.stateVars = ['C', 'M', 'T']
+            'M_A0': 10,
+            'M_P0': 10,
+            'T0': 10}
+        self.stateVars = ['C', 'M_A', 'M_P', 'T']
 
-    # The governing equations
     def ModelEqns(self, t, uVec):
+        params = self.paramDic
         uVec[0] = max(uVec[0], 0)
-        C, M, T, D = uVec
-        # print(C)
-        # if C < 1: ### Rachel added this to ensure the tumor goes to 0 if C<1
-        #     C = 0
-        #     uVec[0] = 0.0
-        print(uVec)
+        C, M_A, M_P, T, D = uVec
         dudtVec = np.zeros_like(uVec)
-        Px = 1 / (1 + np.exp(-6*self.paramDic['x']+3))
-        dudtVec[0] = self.paramDic['r_c'] * C * (1 - C / self.paramDic['K']) - self.paramDic['d_c'] * C - self.paramDic['d_k'] * C * T * (1-Px)
-        dudtVec[1] = self.paramDic['alpha'] * C - self.paramDic['d_M'] * M
-        dudtVec[2] = self.paramDic['r_T'] * T * M * C * (1-Px) - self.paramDic['d_T'] * T
-        dudtVec[3] = 0
+        omega = ((params["d_1"]*C*T)/(1+(params["delta_2"]*M_P))) + (params["d_2"]*C*M_A)
+        drug = D/(params['ic50']+D)
+        dudtVec[0] = (params['r_C']*(1-(params['beta_1']*drug))*C*abs(1-(C/(params['K']+(params['delta_1']*M_P))))) - ((params['d_1']*C*T)/(1+(params['delta_2']*M_P))) - ((params['d_2']*C*M_A)*(1+(params['beta_1']*drug)))
+        dudtVec[1] = (params['alpha_A']*(C/(params['q_A']+C))*(1+(params['beta_3']*drug))) - (params['d_A']*M_A)
+        dudtVec[2] = (params['alpha_P']*(C/(params['q_P']+C))*(1-(params['beta_3']*drug))) - (params['d_P']*M_P)
+        dudtVec[3] = (params['r_T']*T*M_A*omega) - (params['d_T']*T*(1-(params["beta_4"]*drug)))
+        dudtVec[4] = 0
         return (dudtVec)
