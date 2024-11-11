@@ -146,14 +146,21 @@ class ImmuneModel(ODEModel):
 
     def ModelEqns(self, t, uVec):
         params = self.paramDic
-        uVec[0] = max(uVec[0], 0)
+        #uVec[0] = max(uVec[0], 0)
         C, M_A, M_P, T, D = uVec
         dudtVec = np.zeros_like(uVec)
-        omega = ((params["d_1"]*C*T)/(1+(params["delta_2"]*M_P))) + (params["d_2"]*C*M_A)
         drug = D/(params['ic50']+D)
+        omega = ((params["d_1"]*C*T)/(1+(params["delta_2"]*M_P))) + (params["d_2"]*C*M_A)*(1+(params['beta_1']*drug))
         dudtVec[0] = (params['r_C']*(1-(params['beta_1']*drug))*C*abs(1-(C/(params['K']+(params['delta_1']*M_P))))) - ((params['d_1']*C*T)/(1+(params['delta_2']*M_P))) - ((params['d_2']*C*M_A)*(1+(params['beta_1']*drug)))
         dudtVec[1] = (params['alpha_A']*(C/(params['q_A']+C))*(1+(params['beta_3']*drug))) - (params['d_A']*M_A)
         dudtVec[2] = (params['alpha_P']*(C/(params['q_P']+C))*(1-(params['beta_3']*drug))) - (params['d_P']*M_P)
-        dudtVec[3] = (params['r_T']*T*M_A*omega) - (params['d_T']*T*(1-(params["beta_4"]*drug)))
+        dudtVec[3] = (params['r_T']*T*M_A*omega)/(1+T) - (params['d_T']*T*(1-(params["beta_4"]*drug)))
         dudtVec[4] = 0
+        #TODO temp debugging print statements
+        # print("C", C, (params['r_C']*(1-(params['beta_1']*drug))*C*abs(1-(C/(params['K']+(params['delta_1']*M_P))))), ((params['d_1']*C*T)/(1+(params['delta_2']*M_P))), ((params['d_2']*C*M_A)*(1+(params['beta_1']*drug))))
+        # print("M_A", M_A, (params['alpha_A']*(C/(params['q_A']+C))*(1+(params['beta_3']*drug))), (params['d_A']*M_A))
+        # print("M_P", M_P, (params['alpha_P']*(C/(params['q_P']+C))*(1-(params['beta_3']*drug))), (params['d_P']*M_P))
+        # print("T", T, (params['r_T']*T*M_A*omega), (params['d_T']*T*(1-(params["beta_4"]*drug))))
+        # print(T, M_A, omega)
+        # print()
         return (dudtVec)
